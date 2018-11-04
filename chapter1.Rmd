@@ -1,3 +1,7 @@
+output:
+  theme: lumen
+
+
 #About the project 
 ## Description of the course
 
