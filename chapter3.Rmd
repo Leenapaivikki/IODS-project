@@ -16,7 +16,7 @@ library(ggplot2)
 library(boot)
 
 ```
-#Analysis of the alcohol comsumption of Portugese students
+#Analysis of the student performance including alcohol consumption
 
 #Introduction
 
@@ -29,5 +29,73 @@ The datasets were modelled by P. Cortez and A. Silva, described in the paper "Us
 #Data is read in
 ```{r data_input3}
 alc <- as.data.frame(read.table('data/alc.csv',  sep="\t", header=TRUE))
+
 ```
 
+All variables of the data can be displayed by using glimpse function
+```{r data_glimpse3}
+glimpse(alc)
+```
+#Description of data
+
+The dataset consists of 35 variables and 382 observations. The variables are of both numerical and character type. There are also binary variables.
+
+The data variables include student grades, demographic, social and school related features. Special attention is paid on the alcoholic consumption and its possible impact on student performance. There are two alcohol consumption variables - daily and weekly use - which are combined and averaged to variable alc_use. The target variable is binary (low/high) variable consumption of alcohol.
+
+#Four interesting variables to explain the alcohol consumption
+The purpose of the analysis is to study the relationships between high/low alcohol consumption and some of the other variables in the data. After some experiments, I have chosen four explanatory variables that might be indicators of alcohol consumption.
+
+1. Weekly study time could indicate to alcohol consumption - variable studytime.
+2. Students who go out with friends could use more alcohol - variable goout.
+3. Number of school absences, which could be an indicator of alcohol consumption - variable absenses.
+4. Results in final grade, students with poor results might drink more alcohol - variable G3.
+
+
+```{r summary of alc}
+summary(alc[c('studytime', 'goout', 'absences', 'G3')])
+```
+
+```{r ggplots of alc} 
+v1 <- ggplot(data = alc, aes(studytime)) 
+v1 + geom_bar(aes(fill = high_use), stat="count", position = "dodge2") + xlab('study time')
+
+v2 <- ggplot(data = alc, aes(G3))
+v2 + geom_bar(aes(fill = high_use), stat="count", position = "dodge2") + xlab('G3')
+
+v3 <- ggplot(data = alc, aes(x = high_use, y=absences, col = sex))
+v3 + geom_boxplot() + xlab("high_use")
+
+v4 <- ggplot(data = alc, aes(x = high_use, y=goout, col = sex))
+v4 + geom_boxplot() + xlab("high_use")
+
+```
+#Logistic regression analysis
+
+The four assumptioms stated earlier seemed to be eligible at least to some extent. The next step is to use logistic regression to statistically explore the relationship between my chosen explanatory variables and the binary high/low alcohol consumption variable as the target variable.
+
+A summary of the fitted model is presented and interpreted.
+
+```{r fitted model of high_use and summary} 
+m <- glm(high_use ~  + studytime + goout + absences + G3, data = alc, family = "binomial")
+summary(m)
+```
+The summary of the fitted model showcases that there is relatively strong relationship between alcohol consumption and other variables except G3 final grade results. The study time, going out with friends and the number of school absences explain the alcohol consumption rather well and the results are statistically significant.
+
+Next step is to present and interpret the coefficients of the model as odds ratios.
+
+```{r compute the odd rations of fitted model of alc}
+OR <- exp(coef(m))
+OR
+```
+
+Odds ratio can be used to quantify the relationship between variables. The exponents of the coefficients can be interpreted as odds ratios between a unit change (vs no change) in the corresponding explanatory variable.
+
+As can be seen of the results above, a student's alcohol consumption doesn't depend on the grade (odds ratio nearly 1). The same situation is also with the number of absences from school. A student who has a lot of absences is 1.07 likely to consume a lot of alcohol. If the student goes out a lot with friends, he/she is two times likely to drink alcohol a lot. The study time is a good indicator of alcohol consumption. A student who studies a lot is nearly half less likely to drink a lot of alcohol.
+
+Confidence intervals are provided for odd ratios.
+
+```{r compute confidence intervals (CI)}
+CI <-exp(confint(m))
+cbind(OR, CI)
+```
+The results above showcase that the confidence intervals of the odds rations imply the same conclusion that the final frade G3 hypothesis was wrong. The new fitted model is created by removing variable G3 and calculating the the model once again.
