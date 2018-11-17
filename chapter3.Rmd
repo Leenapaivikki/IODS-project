@@ -1,0 +1,33 @@
+---
+title: "chapter3.Rmd"
+author: "Leenapaivikki"
+date: "17112018"
+output: html_document
+---
+
+```{r setup, echo=FALSE, message=FALSE}
+# Clear memory.
+rm(list = ls())
+
+# Packages required by this script.
+library(dplyr)
+library(GGally)
+library(ggplot2)
+library(boot)
+
+```
+#Analysis of the alcohol comsumption of Portugese students
+
+#Introduction
+
+The data of this analysis is from the Portugese survey on student performance in secondary education (high school). The database was built from two sources: school reports and questionnaires, used to complement the previous information. The data was collected during the years 2005-2006. The performance was scrutinized in two distinct subjects: Mathematics and Portuguese language.
+
+The datasets were modelled by P. Cortez and A. Silva, described in the paper "Using Data Mining to Predict Secondary School Student Performance" (2008) http://www3.dsi.uminho.pt/pcortez/student.pdf
+
+## Description of the data
+
+#Data is read in
+```{r data_input3}
+alc <- as.data.frame(read.table('data/alc.csv',  sep="\t", header=TRUE))
+```
+

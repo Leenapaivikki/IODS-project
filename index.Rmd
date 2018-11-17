@@ -2,15 +2,8 @@
 title: "IODS course project"
 author: "Leenapaivikki"
 date: "2018"
-output:
-  html_document:
-    theme: lumen
-    toc: true
-    toc_depth: 2
-    fig_caption: true
-    fig_width: 6
-    fig_height: 4
-    code_folding: show
+output: html_document
+    
 ---
 
 ***
@@ -21,6 +14,11 @@ output:
 ***
   
 ```{r child = "chapter2.Rmd"}
+```
+
+***
+  
+```{r child = "chapter3.Rmd"}
 ```
 
 ***
