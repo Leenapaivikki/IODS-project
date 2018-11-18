@@ -331,6 +331,7 @@ plot(learning2014v2_model, which = c(1,2,5))</code></pre>
 <li>Number of school absences, which could be an indicator of alcohol consumption - variable absenses.</li>
 <li>Results in final grade, students with poor results might drink more alcohol - variable G3.</li>
 </ol>
+<p>A summary and four plots of the chosen variables are showcased below.</p>
 <pre class="r"><code>summary(alc[c('studytime', 'goout', 'absences', 'G3')])</code></pre>
 <pre><code>##    studytime         goout          absences          G3       
 ##  Min.   :1.000   Min.   :1.000   Min.   : 0.0   Min.   : 0.00  
@@ -493,8 +494,8 @@ cv &lt;- cv.glm(data = alc, cost = loss_func, glmfit = m, K = 10)
 
 # Print the average number of wrong predictions in the cross validation
 cv$delta[1]</code></pre>
-<pre><code>## [1] 0.2382199</code></pre>
-<p>The average number of wrong predictions of my model = 0.2382199, which is better than in the IODS course’s DataCamp exercises = 0.2591623.</p>
+<pre><code>## [1] 0.2356021</code></pre>
+<p>The average number of wrong predictions of my model = 0.2356021, which is better than in the IODS course’s DataCamp exercises = 0.2591623.</p>
 <p>To improve the model it is possible to add explanatory variables into the model and recalculate the cross-validation. Based on the DataCamp material there are two variables that could be added to my model: failures and sex. I will add the sex variable as an explanatory variable, because it correlates strongly with the target variable according to DataCamp calculations.</p>
 <pre class="r"><code>m_2 &lt;- glm(high_use ~ studytime + goout + absences + sex, data = alc, family = &quot;binomial&quot;)
 # Summary of the model
@@ -543,8 +544,8 @@ alc &lt;- mutate(alc, prediction_2 = probability_2 &gt; 0.5)
 # Recalculation of cross-validation and print the average number of wrong predictions.
 cv_2 &lt;- cv.glm(data = alc, cost = loss_func, glmfit = m_2, K = 10)
 cv_2$delta[1]</code></pre>
-<pre><code>## [1] 0.2172775</code></pre>
-<p>The average number of wrong predictions of the recalculated model = 0.2172775, which is much better than the correspondent figure in the original model.</p>
+<pre><code>## [1] 0.2146597</code></pre>
+<p>The average number of wrong predictions of the recalculated model = 0.2146597, which is much better than the correspondent figure in the original model.</p>
 <hr />
 </div>
 

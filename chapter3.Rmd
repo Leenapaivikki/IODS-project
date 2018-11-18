@@ -49,6 +49,7 @@ The purpose of the analysis is to study the relationships between high/low alcoh
 3. Number of school absences, which could be an indicator of alcohol consumption - variable absenses.
 4. Results in final grade, students with poor results might drink more alcohol - variable G3.
 
+A summary and four plots of the chosen variables are showcased below.
 
 ```{r summary of alc}
 summary(alc[c('studytime', 'goout', 'absences', 'G3')])
