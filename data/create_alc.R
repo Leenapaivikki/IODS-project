@@ -1,5 +1,5 @@
 # author: Leenapaivikki
-# date: 17112018  
+# date: 18112018  
 # This file contains the script of the Exercise 3 of IODS course.
 # Clear memory.
 rm(list = ls())

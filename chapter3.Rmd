@@ -1,7 +1,7 @@
 ---
 title: "chapter3.Rmd"
 author: "Leenapaivikki"
-date: "17112018"
+date: "18112018"
 output: html_document
 ---
 
@@ -20,19 +20,19 @@ library(boot)
 
 #Introduction
 
-The data of this analysis is from the Portugese survey on student performance in secondary education (high school). The database was built from two sources: school reports and questionnaires, used to complement the previous information. The data was collected during the years 2005-2006. The performance was scrutinized in two distinct subjects: Mathematics and Portuguese language.
+The data of this analysis is from the Portugese survey on student performance in secondary education (high school). The database was built from two sources: school reports and questionnaires, the latter used to complement the previous information. The data was collected during the years 2005-2006. The performance was scrutinized in two distinct subjects: Mathematics and Portuguese language.
 
 The datasets were modelled by P. Cortez and A. Silva, described in the paper "Using Data Mining to Predict Secondary School Student Performance" (2008) http://www3.dsi.uminho.pt/pcortez/student.pdf
 
 ## Description of the data
 
-Data is read in
+To read the data in.
 ```{r data_input3}
 alc <- as.data.frame(read.table('data/alc.csv',  sep="\t", header=TRUE))
 
 ```
 
-All variables of the data can be displayed by using glimpse function
+All variables of the data can be displayed by using glimpse function.
 ```{r data_glimpse3}
 glimpse(alc)
 ```
@@ -66,8 +66,8 @@ v3 + geom_boxplot() + xlab("high_use")
 
 v4 <- ggplot(data = alc, aes(x = high_use, y=goout, col = sex))
 v4 + geom_boxplot() + xlab("high_use")
-
 ```
+
 #Logistic regression analysis
 
 Based on the summary and graphics above, the four assumptioms stated earlier seemed to be eligible at least to some extent. The next step is to use logistic regression to statistically explore the relationship between my chosen explanatory variables and the binary high/low alcohol consumption variable as the target variable.
@@ -111,7 +111,7 @@ The statistics above showcase that the recalculated new model contains explanato
 
 According to the logistic regression model above, it is possible to explore the predictive power of the model.
 
-The next steps are required
+The next steps are required:
 
 ```{r predict with the logistic regression model}
 
@@ -164,11 +164,11 @@ cv <- cv.glm(data = alc, cost = loss_func, glmfit = m, K = 10)
 cv$delta[1]
 ```
 
-The average number of wrong predictions of my model = 0.2356021, which is better than in the IODS course's DataCamp exercises = 0.2591623.
+The average number of wrong predictions of my model = `r (cv$delta[1])`, which is better than in the IODS course's DataCamp exercises = 0.2591623.
 
-To improve the model it is possible to add explanatory variables into the model and recalculate the cross-validation. In the DataCamp material there are two variables that could be added to my model: failures and sex. The experiment with failures variable doesn't improve the value of the average number of wrong predictions so I will add the sex variable as an explanatory variable, which correlates strongly with the target variable according to DataCamp calculations.
+To improve the model it is possible to add explanatory variables into the model and recalculate the cross-validation. Based on the DataCamp material there are two variables that could be added to my model: failures and sex. I will add the sex variable as an explanatory variable, because it correlates strongly with the target variable according to DataCamp calculations.
 
-```{r recalculated model with failures variable}
+```{r recalculated model with sex variable}
 m_2 <- glm(high_use ~ studytime + goout + absences + sex, data = alc, family = "binomial")
 # Summary of the model
 summary(m_2)
@@ -178,10 +178,10 @@ cbind(exp(coef(m_2)), exp(confint(m_2)))
 probabilities_2 <- predict(m_2, type = "response")
 # Probabilities to alc
 alc <- mutate(alc, probability_2 = probabilities_2)
-# Calculate a logical high use value based on probabilites.
+# Calculate a logical high use value based on probabilities.
 alc <- mutate(alc, prediction_2 = probability_2 > 0.5)
 # Recalculation of cross-validation and print the average number of wrong predictions.
 cv_2 <- cv.glm(data = alc, cost = loss_func, glmfit = m_2, K = 10)
 cv_2$delta[1]
 ```
-The average number of wrong predictions of the recalculated model = `r (cv_2$delta[1])`, which is much better than the previous figure.
+The average number of wrong predictions of the recalculated model = `r (cv_2$delta[1])`, which is much better than the correspondent figure in the original model.
