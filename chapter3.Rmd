@@ -26,7 +26,7 @@ The datasets were modelled by P. Cortez and A. Silva, described in the paper "Us
 
 ## Description of the data
 
-#Data is read in
+Data is read in
 ```{r data_input3}
 alc <- as.data.frame(read.table('data/alc.csv',  sep="\t", header=TRUE))
 
@@ -36,13 +36,12 @@ All variables of the data can be displayed by using glimpse function
 ```{r data_glimpse3}
 glimpse(alc)
 ```
-#Description of data
 
 The dataset consists of 35 variables and 382 observations. The variables are of both numerical and character type. There are also binary variables.
 
 The data variables include student grades, demographic, social and school related features. Special attention is paid on the alcoholic consumption and its possible impact on student performance. There are two alcohol consumption variables - daily and weekly use - which are combined and averaged to variable alc_use. The target variable is binary (low/high) variable consumption of alcohol.
 
-#Four interesting variables to explain the alcohol consumption
+##Four interesting variables to explain the alcohol consumption
 The purpose of the analysis is to study the relationships between high/low alcohol consumption and some of the other variables in the data. After some experiments, I have chosen four explanatory variables that might be indicators of alcohol consumption.
 
 1. Weekly study time could indicate to alcohol consumption - variable studytime.
@@ -71,7 +70,7 @@ v4 + geom_boxplot() + xlab("high_use")
 ```
 #Logistic regression analysis
 
-The four assumptioms stated earlier seemed to be eligible at least to some extent. The next step is to use logistic regression to statistically explore the relationship between my chosen explanatory variables and the binary high/low alcohol consumption variable as the target variable.
+Based on the summary and graphics above, the four assumptioms stated earlier seemed to be eligible at least to some extent. The next step is to use logistic regression to statistically explore the relationship between my chosen explanatory variables and the binary high/low alcohol consumption variable as the target variable.
 
 A summary of the fitted model is presented and interpreted.
 
@@ -81,7 +80,7 @@ summary(m)
 ```
 The summary of the fitted model showcases that there is relatively strong relationship between alcohol consumption and other variables except G3 final grade results. The study time, going out with friends and the number of school absences explain the alcohol consumption rather well and the results are statistically significant.
 
-Next step is to present and interpret the coefficients of the model as odds ratios.
+The next step is to present and interpret the coefficients of the model as odds ratios.
 
 ```{r compute the odd rations of fitted model of alc}
 OR <- exp(coef(m))
@@ -90,12 +89,99 @@ OR
 
 Odds ratio can be used to quantify the relationship between variables. The exponents of the coefficients can be interpreted as odds ratios between a unit change (vs no change) in the corresponding explanatory variable.
 
-As can be seen of the results above, a student's alcohol consumption doesn't depend on the grade (odds ratio nearly 1). The same situation is also with the number of absences from school. A student who has a lot of absences is 1.07 likely to consume a lot of alcohol. If the student goes out a lot with friends, he/she is two times likely to drink alcohol a lot. The study time is a good indicator of alcohol consumption. A student who studies a lot is nearly half less likely to drink a lot of alcohol.
+As can be seen of the results above, a student's alcohol consumption doesn't depend on the grade. The same situation is also with the number of absences from school. A student who has a lot of absences is 1.07 likely to consume a lot of alcohol. If the student goes out a lot with friends, he/she is two times likely to drink alcohol a lot. The study time is a good indicator of alcohol consumption. A student who studies a lot is nearly half less likely to drink a lot of alcohol.
 
-Confidence intervals are provided for odd ratios.
+Confidence intervals are provided for odds ratios.
 
 ```{r compute confidence intervals (CI)}
 CI <-exp(confint(m))
 cbind(OR, CI)
 ```
-The results above showcase that the confidence intervals of the odds rations imply the same conclusion that the final frade G3 hypothesis was wrong. The new fitted model is created by removing variable G3 and calculating the the model once again.
+The results above showcase that the confidence intervals of the odds rations imply the same conclusion that the final frade G3 hypothesis was wrong. The new fitted model is created and calculated by removing variable G3. A new summary and recalcutions of the odds rations (OR) and the confidental intervals (CI) are carried out. 
+
+
+```{r new fitted model without G3}
+m <- glm(high_use ~ studytime + goout + absences, data = alc, family = "binomial")
+summary(m)
+cbind(exp(coef(m)), exp(confint(m)))
+```
+The statistics above showcase that the recalculated new model contains explanatory variables that are statistically significant. The confidence intervals show that the model can be used for predictions.
+
+#Prediction of the model
+
+According to the logistic regression model above, it is possible to explore the predictive power of the model.
+
+The next steps are required
+
+```{r predict with the logistic regression model}
+
+# Predict the probability of high_use
+probabilities <- predict(m, type = "response")
+
+# Add the predicted probabilities to 'alc'
+alc <- mutate(alc, probability = probabilities)
+
+# Use the probabilities to make a prediction of high_use
+alc <- mutate(alc, prediction = probability > 0.5)
+
+# Tabulate the target variable versus the predictions
+tbl <- table(high_use = alc$high_use, prediction = alc$prediction)
+addmargins(tbl)
+round(addmargins(prop.table(tbl)), 2)
+```
+The statistics above show that the model predicts less occurences of high use than the survey data contain. The percentage of students who use a lot of alcohol is 30% based on the survey data. The model predicts that the percentage is 18%. This can be shown by graphics:
+
+```{r draw a plot of prediction of high use}
+g = ggplot(alc, aes(x = probability, y = high_use, col=prediction))
+g+geom_point()
+```
+
+##Computation the total proportion of inaccurately classified individuals (= the training error) 
+
+The logistic regression aim to (approximately) minimize the incorrectly classified observations. Since we know how to make predictions with our model, we can also compute the average number of incorrect predictions. First define a loss function (mean prediction error).
+
+```{r calculate logistic regression model training error}
+loss_func = function(class, prob) {
+  n_wrong = abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+# Call loss_func to compute the average number of wrong predictions in the (training) data
+loss_func(class = alc$high_use, prob = alc$probability)
+```
+The training error is 23%, which implies that the accuracy of the model is a little over 76%. The accuracy is not very high, but as we have seen, my choice of the explanatory variables didn't succeed perfectly as well. All explanatory variables were not statistically significant so by the guessing strategy the results were not better.
+
+# Cross-validation (bonus task)
+
+Cross-validation is a method of testing a predictive model on unseen data. In cross-validation, the value of a penalty (loss) function (mean prediction error) is computed on data not used for finding the model. Low value = good. Cross-validation gives a good estimate of the actual predictive power of the model.
+
+I perform 10-fold cross-validation on my model.
+
+```{r calculate 10-fold cross-validation on my model}
+# 10-fold cross-validation
+cv <- cv.glm(data = alc, cost = loss_func, glmfit = m, K = 10)
+
+# Print the average number of wrong predictions in the cross validation
+cv$delta[1]
+```
+
+The average number of wrong predictions of my model = 0.2356021, which is better than in the IODS course's DataCamp exercises = 0.2591623.
+
+To improve the model it is possible to add explanatory variables into the model and recalculate the cross-validation. In the DataCamp material there are two variables that could be added to my model: failures and sex. The experiment with failures variable doesn't improve the value of the average number of wrong predictions so I will add the sex variable as an explanatory variable, which correlates strongly with the target variable according to DataCamp calculations.
+
+```{r recalculated model with failures variable}
+m_2 <- glm(high_use ~ studytime + goout + absences + sex, data = alc, family = "binomial")
+# Summary of the model
+summary(m_2)
+#Calculations of the odds of ratios and the confidence interval
+cbind(exp(coef(m_2)), exp(confint(m_2)))
+# Prediction of the probability
+probabilities_2 <- predict(m_2, type = "response")
+# Probabilities to alc
+alc <- mutate(alc, probability_2 = probabilities_2)
+# Calculate a logical high use value based on probabilites.
+alc <- mutate(alc, prediction_2 = probability_2 > 0.5)
+# Recalculation of cross-validation and print the average number of wrong predictions.
+cv_2 <- cv.glm(data = alc, cost = loss_func, glmfit = m_2, K = 10)
+cv_2$delta[1]
+```
+The average number of wrong predictions of the recalculated model = `r (cv_2$delta[1])`, which is much better than the previous figure.
