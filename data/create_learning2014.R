@@ -1,6 +1,6 @@
 # author: Leenapaivikki
 # date: 08112018  
-# This file contains the script of the Exercise 2 of IODS course.
+# This file contains the R script of the Exercise 2 of IODS course.
 # Clear memory.
 rm(list = ls())
 # R package required by this script is loaded.
