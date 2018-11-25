@@ -1,9 +1,8 @@
 ---
 title: "IODS course project"
-author: "Leenapaivikki"
+author: "Leena Huiku"
 date: "2018"
 output: html_document
-    
 ---
 
 ***
@@ -22,3 +21,7 @@ output: html_document
 ```
 
 ***
+  
+```{r child = "chapter4.Rmd"}
+```
+

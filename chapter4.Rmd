@@ -1,0 +1,252 @@
+---
+title: "chapter4.Rmd"
+author: "Leena Huiku"
+date: "20112018"
+output: html_document
+---
+
+```{r setup_4, echo=FALSE, message=FALSE}
+# Clear memory.
+rm(list = ls())
+
+# Packages needed in this exercise4.
+library(MASS)
+library(dplyr)
+library(ggplot2)
+library(GGally)
+library(tidyverse)
+library(corrplot)
+```
+
+#Clustering and classification of Boston data
+
+## Introduction
+
+The data of this exercise 4 derives from dataset Housing Values in Suburbs of Boston from the 1970s, which is available on the R package MASS. The data contains 506 observations and 14 variables. More information: https://stat.ethz.ch/R-manual/R-devel/library/MASS/html/Boston.html
+
+This data frame contains the following variables:</br>
+-crim: per capita crime rate by town.</br>
+-zn: proportion of residential land zoned for lots over 25,000 sq.ft.</br>
+-indus: proportion of non-retail business acres per town.</br>
+-chas: Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).</br>
+-nox: nitrogen oxides concentration (parts per 10 million).</br>
+-rm: average number of rooms per dwelling.</br>
+-age: proportion of owner-occupied units built prior to 1940.</br>
+-dis: weighted mean of distances to five Boston employment centres.</br>
+-rad:index of accessibility to radial highways.</br>
+-tax: full-value property-tax rate per $10,000.</br>
+-ptratio: pupil-teacher ratio by town.</br>
+-black: 1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town.</br>
+-lstat: lower status of the population (percent).</br>
+-medv: median value of owner-occupied homes in $1000s.</br>
+
+The dataset has been introduced in two publications</br>
+-Harrison, D. and Rubinfeld, D.L. (1978) Hedonic prices and the demand for clean air. J. Environ. Economics and Management 5, 81-102.</br>
+-Belsley D.A., Kuh, E. and Welsch, R.E. (1980) Regression Diagnostics. Identifying Influential Data and Sources of Collinearity. New York: Wiley.</br>
+
+#Loading the data
+
+The data is available in R package MASS and can be loaded by following step
+
+```{r data_input4}
+# Data input, to load the Boston dataset from MASS
+data("Boston")
+```
+
+#Graphical overview of the data and summaries of the variables
+
+Let's have a look on the structure and dimension of the dataset loaded above.
+
+```{r exploration_of_data4}
+# Exploration of the data
+str(Boston)
+summary(Boston)
+```
+
+Exploration of the data graphigally
+
+```{r ggpairs_4}
+p <- ggpairs(Boston, mapping = aes(), lower = list(combo = wrap("facethist", bins = 10)), upper = list(continuous = wrap("cor", size=3)))
+p
+```
+
+From the summary, we can see that the variables in this data frame are numerical, the variables rad and chas are integer. The variable chas is binary and the variable rad is an index, but calculated on the interval level. The scales seem to vary a lot between the variables. For instance variable tax (full-value property-tax) range from 187 to 711.  Variable nox (nitrogen oxides concentration) vary from 0.3850 to 0.8710. The distributions of variables are skewed except the variable rm (average number of rooms per dwelling) and medv (median value of owner-occupied homes), which are nearly normally distributed. The distributions of some variables are highly biased e.g. crim rate (crim), proportion of residential land zoned for very large lots (zn) and the proportion of blacks by town (black).
+
+The relationship between the variables can be analysed by the correlation matrix, which can be created by function cor(). A graphical visualization can be drawn using function corrplot (below). The bigger and more colourful the plots are, the stronger the correlation is between the variables. The color of the circle indicates whether it is negatively or positively correlating. There seem to be strong positive correlation between the property-tax and the accessibility of radial highways. Strong negative correlation is between the variable proportion of lower status of the population and the median value of owner-occupied homes.
+
+```{r corrplot_4}
+# Calculate the correlation matrix, round it and draw a visualization
+cor_matrix <- cor(Boston) %>% round(digits = 2)
+corrplot(cor_matrix, method="circle", type="upper", cl.pos = "b", tl.pos = "d", tl.cex = 0.6)
+```
+
+#Standardization of the dataset and categorization of variables
+
+The Boston data contains only numerical values, so we can use the function scale() to standardize the whole dataset. In the scaling, we subtract the column means from the corresponding columns and divide the difference with standard deviation. In the data, there will be normal distribution, the mean = 0 and all values indicate a distance from the mean in units of standard deviation.
+
+```{r boston_scaled}
+boston_scaled <- as.data.frame(scale(Boston))
+summary(boston_scaled)
+```
+
+The summary of the scaled dataset showcases that after standardizaton all variables fit to normal distribution so that the mean of every variable is zero.
+
+We can create a categorical variable from a continuous one. To categorise our target variable crim (renamed crime):
+
+```{r crime_to_categorise}
+# Create a quantile vector of crim and create the categorical "crime".
+bins <- quantile(boston_scaled$crim)
+crime <- cut(boston_scaled$crim, breaks = bins, include.lowest = TRUE, label = c('low','med_low','med_high','high'))
+# Remove the original unscaled variable and add the new categorical value to scaled data.
+boston_scaled <- dplyr::select(boston_scaled, -crim)
+boston_scaled <- data.frame(boston_scaled, crime)
+# Look at the table of the new factor crime
+table(boston_scaled$crim)
+```
+
+#Division of the dataset to train and test sets
+
+When we want to use a statistical method to predict something, it is important to have data to test how well the predictions fit. Splitting the original data to test and train sets allows us to check how well our model works. The training of the LDA model is done with the train set and prediction on new data is done with the test set. This way you have true classes / labels for the test data, and you can calculate how well the model performed in prediction. This can be done as follows, choosing randomly 80% of the data to be used for training:
+
+```{r boston_scaled_divided}
+# Number of rows in the Boston dataset
+n <- nrow(boston_scaled) 
+# Choose randomly 80% of the rows
+ind <- sample(n,  size = n * 0.8)
+# Create train set
+train <- boston_scaled[ind,]
+# Create test set
+test <- boston_scaled[-ind,] 
+# Save the correct classes from the test data
+correct_classes <- test$crime
+# Remove the crime variable from the test data
+test <- dplyr::select(test, -crime)
+```
+
+Linear Discriminant analysis is a classification (and dimension reduction) method. It finds the (linear) combination of the variables that separate the target variable classes. The target can be binary or multiclass variable. Using the divided dataset, it is possible to train the LDA model on the training set:
+
+```{r boston_scaled_LDA}
+lda.fit <- lda(crime ~ ., data = train)
+lda.fit
+```
+
+As can be seen in the table above, the 1st linear discriminant (LD1) explains as much as 95 % of the variance, LD2 explaining 4 % and LD3 1 %. The LDA can be visualized with a biplot:
+
+```{r LDA_visualization}
+# The function for lda biplot arrows
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+
+# Target classes as numeric
+classes <- as.numeric(train$crime)
+
+# Plot the lda results
+plot(lda.fit, dimen = 2, col = classes, pch = classes)
+lda.arrows(lda.fit, myscale = 1)
+```
+
+The graphics of LDA model showcases that the target variable crime is well separated and the variable accessibility to radial highways separates best.
+
+#Predicting with the model
+
+We split our data earlier so that we have the test set and the correct class labels. Let's have a look on how the LDA model performs when predicting on new (test) data.
+
+```{r model_prediction}
+# Predict classes with test data
+lda.pred <- predict(lda.fit, newdata = test)
+# Cross tabulate the results
+table(correct = correct_classes, predicted = lda.pred$class)
+```
+
+The model predicted the highest of crime rates well. For the other categories, the model didn't predict reliably. Out of a total of 102 observations, 73% of predicted values were predicted to the same category as the correct values. The model can be used to conduct rough predictions.
+
+#Clustering
+
+Similarity or dissimilarity of objects can be measured with distance measures. There are many different measures for different types of data. The most common or "normal" distance measure is Euclidean distance, which I will use in the following exercise.
+
+```{r boston_scaled2}
+boston_scaled <- as.data.frame(scale(Boston))
+# euclidean distance matrix
+dist_eu <- dist(boston_scaled)
+# look at the summary of the distances
+summary(dist_eu)
+```
+
+Next step is to cluster the data with k-means. In our LDA model, there are four classes, which could be a good choice to start.
+
+```{r boston_k-means_4}
+# k-means clustering
+km <-kmeans(dist_eu, centers = 4)
+# Plot the Boston dataset with clusters
+pairs(boston_scaled, col = km$cluster)
+```
+
+K-means needs the number of clusters as an argument. There are many ways to look at the optimal number of clusters and a good way might depend on the data you have.
+
+One way to determine the number of clusters is to look at how the total of within cluster sum of squares (WCSS) behaves when the number of cluster changes. When you plot the number of clusters and the total WCSS, the optimal number of clusters is when the total WCSS drops radically.
+
+```{r boston_k-means_TWCSS}
+# determine the number of clusters
+k_max <- 10
+# Calculate the total within sum of squares using the function.
+twcss <- sapply(1:k_max, function(k){kmeans(Boston, k)$tot.withinss})
+
+# Visualize the results.
+qplot(x = 1:k_max, y = twcss, geom = 'line')
+```
+	
+The optimal number of cluster is where the TWCSS drops radically. The graphics above showcases that the change happens with two clusters. Let's cluster the data with two clusters:
+
+```{r boston_k-means_2}
+# k-means clustering
+km <-kmeans(dist_eu, centers = 2) 
+# Plot the clusters
+pairs(boston_scaled, col = km$cluster)
+```
+
+When using euclidian distance, the optimal number of clusters seems to be two.
+
+#Bonus: Perform k-means on the original Boston data with some reasonable number of clusters (> 2)
+
+The Boston data is reloaded and rescaled.
+
+```{r bonus, echo=F}
+data("Boston")
+boston_scaled <- scale(Boston)
+# k-means clustering
+km <-kmeans(dist_eu, centers = 4)
+# Plot the Boston dataset with clusters
+pairs(boston_scaled, col = km$cluster)
+```
+
+LDA is performed using the clusters as target classes. All the variables in the Boston data are included in the LDA model. The results are visualized with a biplot (arrows are included representing the relationships of the original variables to the LDA solution). 
+
+```{r boston_scaled_LDA_2}
+#Perform LDA using the clusters as target classes. Visualize the results with a biplot
+lda.fit_2 <- lda(km$cluster ~., data = Boston)
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+plot(lda.fit_2, dimen = 2, col= classes, pch=classes)
+lda.arrows(lda.fit_2, myscale = 1)
+``` 
+
+The graphics above visualize LDA model with the K-means clusters as the target variable. The most influential linear separator is variable nitrogen oxides concentration (nox). The second longiest arrow is variable Charles River dummy variable (chas). For other variables, let's have a look at the vectors more closely.
+
+```{r bonus_2, echo=F}
+plot(lda.fit_2, dimen = 2, col= classes, pch=classes)
+lda.arrows(lda.fit_2, myscale = 6)
+```
+
+The graphics above showcases that the variables average number of rooms per dwelling (rm) and pupil-teacher ratio by town (ptratio) seem to be linear separators that separate the clusters.
