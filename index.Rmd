@@ -25,3 +25,7 @@ output: html_document
 ```{r child = "chapter4.Rmd"}
 ```
 
+***
+  
+```{r child = "chapter5.Rmd"}
+```
