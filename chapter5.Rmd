@@ -120,7 +120,7 @@ Other variables that are related to the first component and correlate positively
 
 The second component PCA2 is related to the equality issues. The biplot showcases strong postitive correlation between the variables ratio of females vs. males in the labour force (labo_f_m) and the percetange of female representatives in parliament (parli_f).
 
-The variables related to equality correlate negatively with the variables related to the living conditions. For exmple, based on the data and the biplot above, the rate of maternal mortality and teenage pregnancies are high in Mosambique. On the other hand, the women in Mosambique are active in politics and the ratio female vs. male in the labour market shows that women participate actively in the labour market.
+Let's take some examples of the data. Based on the data and the biplot above, the rate of maternal mortality and teenage pregnancies are high in Mosambique. On the other hand, the women in Mosambique are active in politics and the ratio female vs. male in the labour market shows that women participate actively in the labour market.
 
 In Qatar, there are more women with at least secondary education than men, the life expentancy figure is high, and gross national income is high, but there are no women in the parliament.
 
