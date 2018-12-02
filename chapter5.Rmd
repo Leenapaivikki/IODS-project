@@ -88,7 +88,7 @@ The summary above showcases that the first principal component PC1 explains near
 biplot(pca_human, choices = 1:2, cex = c(0.8, 1), col = c("grey40", "deeppink2"))
 ```
 
-PCA is sensitive to the relative scaling of the original features and assumes that features with larger variance are more important than features with smaller variance. The variable gni_cap stands out of from other variables. The gni_cap is on totally different scale than other variables and as earlier stated there are some outliers that can detected in the scatterplot. Standardization of the features before PCA is needed. After standardising the variables, the results look different:
+Based on the course's learning material, PCA is sensitive to the relative scaling of the original features and assumes that features with larger variance are more important than features with smaller variance. The variable gni_cap stands out of from other variables. The gni_cap is on totally different scale than other variables and as earlier stated there are some outliers that can detected in the scatterplot. Standardization of the features before PCA is needed. After standardising the variables, the results look different:
 
 ```{r human_standardised_PCA}
 # Standardisation of the variables
