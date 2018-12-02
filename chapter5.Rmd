@@ -82,7 +82,7 @@ p_human_notstd <- summary(pca_human)
 p_human_notstd
 ```
 
-The summary above showcases that the first principal component PC1 explains nearly all of the variance (proportion of variance 9.999e-0, PC2 0.0001). The bilpot drawing generates a list of errors related to arrows which the program cannot draw properly.
+The summary above showcases that the first principal component PC1 explains nearly all of the variance (proportion of variance 9.999e-01, PC2 0.0001). The bilpot drawing generates a list of errors related to arrows which the program cannot draw properly.
 
 ```{r biplot_notstandardised5}
 biplot(pca_human, choices = 1:2, cex = c(0.8, 1), col = c("grey40", "deeppink2"))
@@ -122,9 +122,9 @@ The second component PCA2 is related to the equality issues. The biplot showcase
 
 Let's take some examples of the data. Based on the data and the biplot above, the rate of maternal mortality and teenage pregnancies are high in Mosambique. On the other hand, the women in Mosambique are active in politics and the ratio female vs. male in the labour market shows that women participate actively in the labour market.
 
-In Qatar, there are more women with at least secondary education than men, the life expentancy figure is high, and gross national income is high, but there are no women in the parliament.
+In Qatar, there are more women with at least secondary education than men, the life expentancy rate is high, and gross national income is high, but there are no women in the parliament.
 
-As whole, the living conditions explain the most variability of the data.
+The examples indicate that the components PCA1 and PCA2 are not correlated as was stated based on the biplot. As whole, the living conditions explain the most variability of the data.
 
 #Multiple Correspondence Analysis (MCA) on the tea data 
 
@@ -164,7 +164,7 @@ mca <- MCA(tea2)
 summary(mca)
 ```
 
-The summary showcases that the dimensions don't explain a large proportion of the total variance. There are no strong links between the dimensions and the categorical variables. The plot shows the situation:
+The summary showcases that the dimensions don't explain a large proportion of the total variance. There are no strong relations between the dimensions and the variables. The situation by the plot:
 	
 ```{r tea2_plot}
 # visualize MCA
