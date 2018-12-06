@@ -1,8 +1,6 @@
-output:
-  theme: lumen
+output: html
 
-
-#About the project 
+#Exercise 1. About the project
 ## Description of the course
 
 The Open data science course is a comprehensive introduction to open science, open data, and open research tools.After completing this course, the student will be able to visualize and analyze data set with statistical methods. The tools which are used on the course are freely available, open software tools.

@@ -1,6 +1,7 @@
 ---
 title: "Introduction to Open Data Science: Rstudio Exercise2"
-author: "leenapaivikki"
+author: "Leena Huiku"
+date: "18112018"
 output: html_document
 ---
 
@@ -11,7 +12,7 @@ library(dplyr)
 library(GGally)
 library(ggplot2)
 ```
-#Analysis of the Learning Data
+#Exercise 2. Analysis of the Learning Data
 
 #Description of data
 

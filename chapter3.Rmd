@@ -1,6 +1,6 @@
 ---
 title: "chapter3.Rmd"
-author: "Leenapaivikki"
+author: "Leena Huiku"
 date: "18112018"
 output: html_document
 ---
@@ -16,7 +16,7 @@ library(ggplot2)
 library(boot)
 
 ```
-#Analysis of the student performance including alcohol consumption
+#Exercise 3. Analysis of the student performance including alcohol consumption
 
 #Introduction
 

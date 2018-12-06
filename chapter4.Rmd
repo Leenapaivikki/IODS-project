@@ -18,7 +18,7 @@ library(tidyverse)
 library(corrplot)
 ```
 
-#Clustering and classification of Boston data
+#Exercise 4. Clustering and classification of Boston data
 
 ## Introduction
 

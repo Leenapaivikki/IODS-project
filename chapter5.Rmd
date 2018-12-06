@@ -5,7 +5,7 @@ date: "28.11.2018"
 output: html_document
 ---
 
-#Dimensionality reduction techniques
+#Exercise 5. Dimensionality reduction techniques
 
 The exercise consists of two parts: the first part is the human data analysis based on United Nations report and the second part is the tea usage analysis based on questionnaire among 300 individuals, the data extracted from R FactoMineR library. 
 
