@@ -261,6 +261,8 @@ ggplot(BPRSL, aes(x = week, y = bprs, linetype = subject)) +
 
 The graphics above showcases that the BPRS score of almost all the men is decreasing over the eight weeks of the study. The men who have higher BPRS values at the beginning tend to have higher values throughout the study. The graphics shows that there are big individual differences and variability appears to decrease with time.
 
+##Linear Mixed Effects Models
+
 The Linear Regression Model doesn't take into account the correlated nature of the longitudinal data. It treats observations over time as independent of each other. In the longitudinal data, several observations of the response variable have been made on the same individual and therefore it is likely that the measurements are correlated rather than independent. The next models take into account the longitudinal aspect of the data.
 
 To begin the more formal analysis of the BPRS data, we will fit three different models:<br>
