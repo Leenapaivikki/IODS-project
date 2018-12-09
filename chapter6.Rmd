@@ -1,0 +1,330 @@
+---
+title: "chapter6.Rmd"
+author: "Leena Huiku"
+date: "07.12.2018"
+output: html_document
+---
+
+#Exercise 6. Analysis of longitudinal data
+
+This exercise consists of two parts: Part 1. Analysis of RATS data and Part 2. Analysis of BPRS data. The task in this exercise is to analyse the datasets using statistical methods suitable for analysis for longitudinal data. The longitudinal data is collected over a long time period, with several observations per subject.
+
+In Part 1. some useful methods for the graphical exploration of this type of data and simple Summary Measure Approach is applied to RATS data. In Part 2. Linear Mixed Effects Models are applied to BPRS data.
+
+The data are provided by Kimmo Vehkalahti and found here
+https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/BPRS.txt
+https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/rats.txt
+
+The source material for this exercise is provided by course: Selected excerpts of the forthcoming book (Vehkalahti and Everitt, 2019), Chapter 8 Analysis of Longitudinal Data I: Graphical Displays and Summary Measure Approach and Chapter 9 Analysis of Longitudinal Data II: Linear Mixed Effects Models for Normal Response Variables.
+
+```{r setup6, echo=F, message=F}
+# Clear memory.
+rm(list = ls())
+# Packages that are needed in the exercise 6
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library("lme4")
+```
+
+#PART 1. Analysis of RATS data
+
+##Description of the data
+
+The data is from a nutrition study conducted in three groups of rats. The three groups were put on different diets, and each animal's body weight (grams) was recorded repeatedly (approximately weekly, except in week seven when two recordings were taken) over a 9-week period. The question of most interest is whether the growth profiles of the three groups differ. The data have been converted into a long format.
+
+The data is loaded in:
+```{r RATS_data_input6}
+#Read the RATS data into R
+RATS <- read.table("https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/rats.txt", header = TRUE, sep  ='\t')
+```
+
+To glimpse the dataset and the categorial variables are converted to factors.
+```{r RATS_factor_glimpse6}
+# Glimpse the data}
+# Convert the categorical variables of data set to factors
+RATS$ID <- factor(RATS$ID)
+RATS$Group <- factor(RATS$Group)
+glimpse(RATS)
+```
+
+To convert the data to long form.
+```{r RATS_long_form6}
+# Convert to long form
+RATSL <- RATS %>%
+  gather(key = WD, value = Weight, -ID, -Group) %>%
+  mutate(Time = as.integer(substr(WD,3,4))) 
+```
+
+To glimpse of the dataset.
+```{r RATSL_glimpse6}
+# Look at the structure of dataset
+glimpse(RATSL)
+```
+
+The plot shows the rat growth profiles by three groups for the RATS data over nine weeks.
+```{r RATSL_ggplot6}
+ggplot(RATSL, aes(x = Time, y = Weight, linetype = ID))+
+  geom_line() + scale_linetype_manual(values = rep(1:10, times=4))+
+  facet_grid(. ~ Group, labeller = label_both)+
+  theme_bw() + theme(legend.position = "none")+
+  theme(panel.grid.minor.y = element_blank()) +
+  scale_y_continuous(limits = c(min(RATSL$Weight), max(RATSL$Weight)))
+```
+
+The graphics above showcases that the weights of the rats in the first group are much lower than the weights of rats in the other groups. In all groups, there seem to be possibly an outlier. The weight score of almost all the rats is increasing over the nine weeks of the study. The rats which have higher weight values at the beginning tend to have higher values throughout the study. This phenomenon is generally referred to as <i>tracking</i>.
+
+The standardisation of the values of each observation might give a closer picture of the situation.
+
+```{r RATSL_standardise6}
+# Standardise the variable weight
+RATSL <- RATSL %>%
+  group_by(Time) %>%
+  mutate(stdweight = Weight) %>%
+  ungroup()
+```
+
+Let's have a glimpse on the standardised dataset.
+```{r RATSL_std_glimpset6}
+# Glimpse the data
+glimpse(RATSL)
+```
+
+The next plot showcases the individual rat growth profiles for RATS data after standardisation.
+
+```{r RATSL_std_ggplot6}
+ggplot(RATSL, aes(x = Time, y = stdweight, linetype = ID)) +
+  geom_line() + scale_linetype_manual(values = rep(1:10, times=4))+
+  facet_grid(. ~ Group, labeller = label_both)+
+  theme_bw() + theme(legend.position = "none")+
+  theme(panel.grid.minor.y = element_blank())+
+  scale_y_continuous(name = "standardised weight")
+```
+
+It is often useful to produce graphs showing average (mean) profiles for each group instead of the individual profiles.
+```{r RATSL_std_time6}
+# Number of weeks, baseline (week 0) included
+n <- RATSL$Time %>% unique() %>% length()
+```
+
+```{r RATSS_std_mean6}
+# Summary data with mean and standard error of weight by group and time
+RATSS <- RATSL %>%
+  group_by(Group, Time) %>%
+  summarise(mean = mean(Weight), sd = sd(Weight)) %>%
+  ungroup()
+```
+
+Let's have a look at the new dataset.
+```{r RATSS_std_mean_glimpse6}
+# Glimpse the data
+glimpse(RATSS)
+```
+
+The next plot showcases the mean rat growth profiles for the three groups in the RATS data.
+```{r RATSS_std_mean_ggplot6}
+# Plot the mean profiles
+ggplot(RATSS, aes(x = Time, y = mean, linetype = Group, shape = Group)) +
+  geom_line() +
+  scale_linetype_manual(values = c(1,2,3)) +
+  geom_point(size=3) +
+  scale_shape_manual(values = c(1,2,3)) +
+  #geom_errorbar(aes(ymin=mean-se, ymax=mean+se, linetype="1"), width=0.3) +
+  theme(legend.position = c(0.8,0.8)) +
+  scale_y_continuous(name = "mean(Weight) +/- se(Weight)")
+```
+
+There is no overlap in the mean profiles of the three groups suggesting that there is difference between the three groups with respect to the mean weight values.
+
+##Summary Measure Approach
+
+The next plot suggests the presence of some possible outliers at a number of time points. Let's create a summary data by groups and individuals with mean as the summary variable. The observations after the first measurement are included.
+
+```{r RATS8S_dataset_mean6}
+# Create a summary data by Group and ID with mean as the summary variable (ignoring baseline day 1).
+RATSL8S <- RATSL %>%
+  filter(Time > 1) %>%
+  group_by(Group, ID) %>%
+  summarise( mean=mean(Weight) ) %>%
+  ungroup()
+```
+
+Let's glimpse the dataset.
+```{r RATS8S_glimpse6}
+# Glimpse the data
+glimpse(RATSL8S)
+RATSL8S$mean
+```
+
+The boxplot of all groups reveals outliers. They are the lowest values in the group 1 and 3 and the highest value in the group 2. The outliers might bias the conclusions from further comparisons of the groups, so we shall remove these subjects from the data.
+```{r RATS8S_mean_ggplot6}
+# Draw a boxplot of the mean versus group
+ggplot(RATSL8S, aes(x = Group, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun.y = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean(Weight), weeks 1-8")
+```
+
+The boxplot without the outliers.
+```{r RATS8S1_ggplot6}
+# Create a new data by filtering the outlier and adjust the ggplot code the draw the plot again with the new data
+RATSL8S1 <- filter(RATSL8S, mean != 238.9, mean != 594.0, mean != 495.2)
+RATSL8S1$mean
+ggplot(RATSL8S1, aes(x = Group, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun.y = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean(weight), weeks 1-8")
+```
+
+After removal of the outliers, the groups are remarkably different. The graphics produced earlier in this exercise indicate a difference between the three groups. To formally test the difference between the groups, an anova test is applied. The t-test as was performed in the reference material (MABS) cannot be performed because there can be only two samples in the t-test. The data without the outliers created in the previous exercise is used.
+
+The baseline will be added to the summary data as a new variable.
+```{r RATS8S1_baseline6}
+# Add the baseline from the original data as a new variable to the summary data
+RATSL8S2 <- RATSL8S %>%
+  mutate(baseline = RATS$WD1)
+```
+
+Linear model analysis will be performed the mean as the response variable and the ANCOVA model is fitted.
+```{r RATS8S1_lm6}
+# Fit the linear model with the mean as the response 
+fit <- lm( mean ~ Group, data = RATSL8S2)
+summary(fit)
+anova(fit)
+```
+
+The question of most interest is whether the growth profiles of the three groups differ. The informal graphical studies and the formal test show that there is a difference between the rat growth profiles of the three groups and it is statistically significant.
+
+
+
+#PART 2. Analysis of Brief Psychiatric Rating Scale (BPRS) data
+
+##Description of the data
+
+The data is a longitudinal data from clinical trials. Total 40 male subjects were randomly assigned to one of two treatment groups and each subject was rated on the brief psychiatric rating scale (BPRS) measured before treatment began (week 0) and then at weekly intervals for eight weeks. The BPRS assesses the level of 18 symptom constructs such as hostility, suspiciousness, hallucinations and grandiosity. The scale for each of these is rated from one (not present) to seven (extremely severe). The scale is used in the diagnosing of schizophrenia.
+
+The data load:
+```{r BPRS_data_input6}
+#Read the "BPRS" data into R
+BPRS <- read.table("https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/BPRS.txt", header = TRUE, sep  =" ")
+```
+
+To glimpse the dataset and the categorial variables are converted to factors.
+```{r BPRS_factor_glimpse6}
+# Convert the categorical variables of data set to factors
+BPRS$treatment <- factor(BPRS$treatment)
+BPRS$subject <- factor(BPRS$subject)
+glimpse(BPRS)
+```
+
+To convert the data to long form.
+```{r BPRS_long_form6}
+# Convert to long form
+BPRSL <-  BPRS %>% gather(key = weeks, value = bprs, -treatment, -subject)
+# Extract the week number
+BPRSL <-  BPRSL %>% mutate(week = as.integer(substr(weeks, 5, 5)))
+```
+
+To glimpse the dataset in long form.
+```{r BPRSL_glimpse6}
+# Look at the structure of dataset
+glimpse(BPRSL)
+```
+
+The next plot shows variable bprs in treatment groups against time for BPRS data.
+```{r BPRSL_ggplot6}
+# Draw the plot
+ggplot(BPRSL, aes(x = week, y = bprs, group = subject, color = treatment)) + geom_text(aes(label = treatment)) + scale_x_continuous(name = "Week", breaks = seq(0, 8, 1)) +scale_y_continuous(name = "BPRS") + theme(legend.position = "top") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+Based on the plot above, the bprs rate seems to descrease over time in the first group. In the second group, there is variation in the bprs rates over the time period.
+
+##Linear Regression Model
+
+The Linear Regression Model will be fitted to BPRS data, bprs as the target variable and week and treatment as the explanatory variables. We ignore the repeated-measures structure of the data.
+```{r BPRS_LM, echo=TRUE}
+BPRS_reg <- lm(bprs ~ week + treatment, data = BPRSL)
+summary(BPRS_reg)
+```
+
+The statistical analysis indicate that variable treatment is not statistically significant variable and doesn't have impact on the model.
+
+We plot the individual response profiles of BPRS data.
+```{r BPRSL_ggplot26}
+# Draw the plot
+ggplot(BPRSL, aes(x = week, y = bprs, linetype = subject)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ treatment, labeller = label_both) +
+  theme(legend.position = "none") + 
+  scale_y_continuous(limits = c(min(BPRSL$bprs), max(BPRSL$bprs)))
+```
+
+The graphics above showcases that the BPRS score of almost all the men is decreasing over the eight weeks of the study. The men who have higher BPRS values at the beginning tend to have higher values throughout the study. The graphics shows that there are big individual differences and variability appears to decrease with time.
+
+The Linear Regression Model doesn't take into account the correlated nature of the longitudinal data. It treats observations over time as independent of each other. In the longitudinal data, several observations of the response variable have been made on the same individual and therefore it is likely that the measurements are correlated rather than independent. The next models take into account the longitudinal aspect of the data.
+
+To begin the more formal analysis of the BPRS data, we will fit three different models:<br>
+1. Random Intercept Model<br>
+2. Random Intercept and Slope Model<br>
+3. Interaction Model<br>
+
+Below scatterplot matrix of repeated measures in BPRS data.
+```{r BPRS_pairs, echo=TRUE, fig.width=10, fig.height=10}
+pairs(BPRS[, 3:11], cex = 0.7)
+```
+
+###1. Random Intercept Model
+
+Below results from fitting Random Intercept Model, with week and treatment as explanatory variables, to BPRS Data
+```{r BPRS_ref, echo=TRUE}
+BPRS_ref <- lmer(bprs ~ week + treatment + (1 | subject), data = BPRSL, REML = FALSE)
+summary(BPRS_ref)
+```
+
+The random intercept model allows different intercept terms for each observation. The coefficients on week and treatment are identical to the Linear Regression Model, but the standard errors are smaller in the Random Intercept Model.
+
+###2. Random Intercept and Slope Model
+
+Below results from Fitting the Random Intercept and Slope Model, with week and treatment as explanatory variables, to BPRS Data
+```{r BPRS_ref1, echo=TRUE}
+BPRS_ref1 <- lmer(bprs ~ week + treatment + (week | subject), data = BPRSL, REML = FALSE)
+summary(BPRS_ref1)
+anova(BPRS_ref1, BPRS_ref)
+```
+The model allows a differing slope for each observation unit. The coefficients are identical, but their standard errors differ from the the Random Intercept Model. The standard error on treatment decreases, but the standard errors of intercept and week increase. The interpretation of the coefficient on week is that the BPRS value decreases within the 8 week period in the treatment group one by approximately -2.3 points in a week.
+
+The ANOVA results indicate, that the models are different from each other at statistically signifant level.
+
+###3. Interaction Model
+
+Next we will fit a random intercept and slope model that allows for a treatment × week interaction to BPRS Data. We conduct an ANOVA to compare this with the above models.
+
+```{r BPRS_ref2, echo=TRUE}
+BPRS_ref2 <- lmer(bprs ~ week * treatment + (week | subject), data = BPRSL, REML = FALSE)
+summary(BPRS_ref2)
+anova(BPRS_ref1, BPRS_ref2)
+```
+The results of this model differ from the earlier fittings. The estimate on the treatment variable is negative, the interaction term positive. The intercept increases a bit.
+
+The next plots show fitted response profiles from the interaction model and observed response profiles in BPRS data.
+```{r BPRS_Fitted}
+Fitted <- fitted(BPRS_ref2)
+BPRSL <- BPRSL %>% mutate(Fitted)
+
+ggplot(BPRSL, aes(x = week, y = bprs, col = subject)) +
+  geom_line(aes(linetype = treatment)) +
+  scale_x_continuous(name = "Week") +
+  scale_y_continuous(name = "BPRS") +
+  theme(legend.position = "bottom") +
+  ggtitle("Observed") 
+
+ggplot(BPRSL, aes(x = week, y = Fitted, col = subject)) +
+  geom_line(aes(linetype = treatment)) +
+  scale_x_continuous(name = "Week") +
+  scale_y_continuous(name = "BPRS") +
+  theme(legend.position = "bottom") +
+  ggtitle("Fitted") 
+```
+
+This graphics shows that the interaction model fits to some extent relatively well with the observed data.
