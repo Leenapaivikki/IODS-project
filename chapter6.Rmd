@@ -24,7 +24,6 @@ rm(list = ls())
 library(tidyr)
 library(dplyr)
 library(ggplot2)
-library("lme4")
 ```
 
 #PART 1. Analysis of RATS data
@@ -278,6 +277,7 @@ pairs(BPRS[, 3:11], cex = 0.7)
 
 Below results from fitting Random Intercept Model, with week and treatment as explanatory variables, to BPRS Data
 ```{r BPRS_ref, echo=TRUE}
+library("lme4")
 BPRS_ref <- lmer(bprs ~ week + treatment + (1 | subject), data = BPRSL, REML = FALSE)
 summary(BPRS_ref)
 ```
@@ -298,7 +298,7 @@ The ANOVA results indicate, that the models are different from each other at sta
 
 ###3. Interaction Model
 
-Next we will fit a random intercept and slope model that allows for a treatment × week interaction to BPRS Data. We conduct an ANOVA to compare this with the above models.
+Next we will fit a random intercept and slope model that allows for a treatment x week interaction to BPRS Data. We conduct an ANOVA to compare this with the above models.
 
 ```{r BPRS_ref2, echo=TRUE}
 BPRS_ref2 <- lmer(bprs ~ week * treatment + (week | subject), data = BPRSL, REML = FALSE)
