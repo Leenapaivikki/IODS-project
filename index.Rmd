@@ -1,5 +1,5 @@
 ---
-title: "IODS course project"
+title: "IODS Open Data Science course project"
 author: "Leena Huiku"
 date: "2018"
 output: html_document
