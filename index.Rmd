@@ -33,3 +33,4 @@ output: html_document
   
 ```{r child = "chapter6.Rmd"}
 ```
+
